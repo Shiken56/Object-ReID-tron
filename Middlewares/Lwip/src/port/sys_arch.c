@@ -177,3 +177,46 @@ sys_thread_t sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, 
 
     return tskid;
 }
+
+/* ========================================================================= */
+/* MUTEX AND MAILBOX VALIDATION                                              */
+/* ========================================================================= */
+
+int sys_mbox_valid(sys_mbox_t *mbox) {
+    return (*mbox > 0);
+}
+
+void sys_mbox_set_invalid(sys_mbox_t *mbox) {
+    *mbox = 0;
+}
+
+err_t sys_mutex_new(sys_mutex_t *mutex) {
+    T_CMTX cmtx = {0};
+    cmtx.mtxatr = TA_TFIFO;
+    *mutex = tk_cre_mtx(&cmtx);
+    if (*mutex <= 0) {
+        return ERR_MEM;
+    }
+    return ERR_OK;
+}
+
+void sys_mutex_lock(sys_mutex_t *mutex) {
+    tk_loc_mtx(*mutex, TMO_FEVR);
+}
+
+void sys_mutex_unlock(sys_mutex_t *mutex) {
+    tk_unl_mtx(*mutex);
+}
+
+void sys_mutex_free(sys_mutex_t *mutex) {
+    tk_del_mtx(*mutex);
+    *mutex = 0;
+}
+
+int sys_mutex_valid(sys_mutex_t *mutex) {
+    return (*mutex > 0);
+}
+
+void sys_mutex_set_invalid(sys_mutex_t *mutex) {
+    *mutex = 0;
+}
