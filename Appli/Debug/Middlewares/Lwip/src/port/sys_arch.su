@@ -1,4 +1,0 @@
-C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/Lwip/src/port/sys_arch.c:6:6:sys_init	4	static
-C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/Lwip/src/port/sys_arch.c:11:7:sys_now	16	static
-C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/Lwip/src/port/sys_arch.c:18:12:sys_arch_protect	16	static
-C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/Lwip/src/port/sys_arch.c:25:6:sys_arch_unprotect	16	static

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <errno.h>
 
 /* Define ARM Cortex-M hardware endianness */
 #ifndef BYTE_ORDER

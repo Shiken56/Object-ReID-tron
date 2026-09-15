@@ -1,0 +1,69 @@
+# ==========================================
+# Build Artifacts & Output Directories
+# ==========================================
+[Dd]ebug/
+[Rr]elease/
+**/Debug/
+**/Release/
+
+# Compiled object, dependency, and analysis files
+*.o
+*.obj
+*.o.*
+*.d
+*.su
+*.cyclo
+
+# Linker map files, symbol dumps, and assembly listings
+*.map
+*.list
+*.lst
+
+# Binary & Firmware Executables
+*.elf
+*.bin
+*.hex
+*.axf
+*.srec
+*.out
+
+# Generated makefile artifacts
+*.mk
+makefile
+objects.list
+sources.mk
+
+# ==========================================
+# STM32CubeIDE / Eclipse Metadata
+# ==========================================
+# Eclipse indexing and local compiler-discovery cache
+.metadata/
+**/.settings/language.settings.xml
+
+# Debug / Run Launch Configurations (often contain local machine paths)
+*.launch
+
+# Eclipse dynamic project logs
+*.log
+
+# ==========================================
+# OS & Editor Specific Files
+# ==========================================
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor swap files and backups
+*~
+*.bak
+*.tmp
+*.swp
+.vscode/
+.idea/
