@@ -34,6 +34,7 @@ EXPORT UW *knl_exctbl_o;	// Exception handler table (Origin)
 EXPORT void		*knl_lowmem_top;	// Head of area (Low address)
 EXPORT void		*knl_lowmem_limit;	// End of area (High address)
 IMPORT const void	*_end;
+IMPORT const void	*_tron_heap_start;
 
 #if USE_STATIC_SYS_MEM
 EXPORT UW knl_system_mem[SYSTEM_MEM_SIZE/sizeof(UW)] __attribute__((section(".mtk_sysmem")));
@@ -97,8 +98,8 @@ EXPORT void knl_start_mtkernel(void)
 	} else {
 		knl_lowmem_top = (UW*)SYSTEMAREA_TOP;
 	}
-	if((UW)knl_lowmem_top < (UW)&_end) {
-		knl_lowmem_top = (UW*)&_end;
+	if((UW)knl_lowmem_top < (UW)&_tron_heap_start) {
+		knl_lowmem_top = (UW*)&_tron_heap_start;
 	}
 
 	if((SYSTEMAREA_END != 0) && (INTERNAL_RAM_END > CNF_SYSTEMAREA_END)) {

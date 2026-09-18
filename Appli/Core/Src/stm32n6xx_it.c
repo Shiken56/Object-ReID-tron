@@ -22,6 +22,8 @@
 #include "stm32n6xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#define PendSV_Handler PendSV_Handler_dummy
+#define SysTick_Handler SysTick_Handler_dummy
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -259,5 +261,20 @@ void I2C1_ER_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+#undef PendSV_Handler
+#undef SysTick_Handler
 
+extern void knl_dispatch_entry(void);
+extern void knl_systim_inthdr(void);
+
+void __attribute__((naked)) PendSV_Handler(void)
+{
+    __asm volatile("b knl_dispatch_entry");
+}
+
+void SysTick_Handler(void)
+{
+    knl_systim_inthdr();
+    HAL_IncTick();
+}
 /* USER CODE END 1 */

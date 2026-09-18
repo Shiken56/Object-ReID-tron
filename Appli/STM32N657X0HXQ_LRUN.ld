@@ -148,10 +148,12 @@ SECTIONS
 
   .noncacheable :
   {
-    . = ALIGN(8);
+    . = ALIGN(32);
     __snoncacheable = .;/* create symbol for start of section */
     KEEP(*(.noncacheable))
-    . = ALIGN(8);
+    KEEP(*(.RxDecripSection))
+    KEEP(*(.TxDecripSection))
+    . = ALIGN(32);
     __enoncacheable = .;  /* create symbol for end of section */
   } > RAM
 
@@ -187,8 +189,11 @@ SECTIONS
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
     . = . + _Min_Heap_Size;
+    . = ALIGN(8);
+    PROVIDE ( _heap_limit = . );
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
+    PROVIDE ( _tron_heap_start = . );
   } >RAM
 
   /* Remove information from the compiler libraries */

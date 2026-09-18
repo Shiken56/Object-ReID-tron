@@ -81,8 +81,12 @@ void Error_Handler(void);
 #define I2C1_SDA_GPIO_Port GPIOC
 #define OSC_OUT_Pin GPIO_PIN_1
 #define OSC_OUT_GPIO_Port GPIOH
+#define VCP_TX_Pin GPIO_PIN_5
+#define VCP_TX_GPIO_Port GPIOE
 #define I2C1_SCL_Pin GPIO_PIN_9
 #define I2C1_SCL_GPIO_Port GPIOH
+#define VCP_RX_Pin GPIO_PIN_6
+#define VCP_RX_GPIO_Port GPIOE
 #define ETH_MDINT_Pin GPIO_PIN_3
 #define ETH_MDINT_GPIO_Port GPIOD
 #define LED_GREEN_Pin GPIO_PIN_1

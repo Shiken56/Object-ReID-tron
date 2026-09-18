@@ -117,8 +117,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
       __HAL_RCC_ADC12_CLK_ENABLE();
     }
 
+    __HAL_RCC_GPIOF_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration
+    PF4     ------> ADC1_INP18
     PA9     ------> ADC1_INP10
     PA10     ------> ADC1_INN10
     PA10     ------> ADC1_INP11
@@ -127,6 +129,11 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PA12     ------> ADC1_INN12
     PA12     ------> ADC1_INP13
     */
+    GPIO_InitStruct.Pin = GPIO_PIN_4;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
     GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10|UCPD1_VSENSE_Pin|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -200,6 +207,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     }
 
     /**ADC1 GPIO Configuration
+    PF4     ------> ADC1_INP18
     PA9     ------> ADC1_INP10
     PA10     ------> ADC1_INN10
     PA10     ------> ADC1_INP11
@@ -208,6 +216,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     PA12     ------> ADC1_INN12
     PA12     ------> ADC1_INP13
     */
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_4);
+
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10|UCPD1_VSENSE_Pin|GPIO_PIN_12);
 
     /* ADC1 interrupt DeInit */
@@ -296,6 +306,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     __HAL_RCC_GPIOG_CLK_ENABLE();
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
+    PD12     ------> ETH1_MDIO
     PF10     ------> ETH1_RGMII_RX_CTL
     PF7     ------> ETH1_RGMII_RX_CLK
     PF5     ------> ETH1_CLK
@@ -311,10 +322,10 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RGMII_TXD0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
@@ -323,21 +334,21 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
                           |GPIO_PIN_11|GPIO_PIN_13|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH1;
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = ETH_TXD3_Pin|ETH_TX2_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH1;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = ETH_GTX_CLK_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF12_ETH1;
     HAL_GPIO_Init(ETH_GTX_CLK_GPIO_Port, &GPIO_InitStruct);
 
@@ -370,6 +381,7 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
 
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
+    PD12     ------> ETH1_MDIO
     PF10     ------> ETH1_RGMII_RX_CTL
     PF7     ------> ETH1_RGMII_RX_CLK
     PF5     ------> ETH1_CLK
@@ -385,7 +397,7 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RGMII_TXD0
     */
-    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1|GPIO_PIN_12);
 
     HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10|GPIO_PIN_7|ETH_CLK_Pin|GPIO_PIN_15
                           |GPIO_PIN_14|ETH_RXD2_Pin|ETH_CLK125_Pin|ETH_RXD3_Pin
@@ -490,6 +502,83 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
     /* USER CODE BEGIN I2C1_MspDeInit 1 */
 
     /* USER CODE END I2C1_MspDeInit 1 */
+  }
+
+}
+
+/**
+  * @brief UART MSP Initialization
+  * This function configures the hardware resources used in this example
+  * @param huart: UART handle pointer
+  * @retval None
+  */
+void HAL_UART_MspInit(UART_HandleTypeDef* huart)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+  if(huart->Instance==USART1)
+  {
+    /* USER CODE BEGIN USART1_MspInit 0 */
+
+    /* USER CODE END USART1_MspInit 0 */
+
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+    PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_CLKP;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Peripheral clock enable */
+    __HAL_RCC_USART1_CLK_ENABLE();
+
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+    /**USART1 GPIO Configuration
+    PE5     ------> USART1_TX
+    PE6     ------> USART1_RX
+    */
+    GPIO_InitStruct.Pin = VCP_TX_Pin|VCP_RX_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+    /* USER CODE BEGIN USART1_MspInit 1 */
+
+    /* USER CODE END USART1_MspInit 1 */
+
+  }
+
+}
+
+/**
+  * @brief UART MSP De-Initialization
+  * This function freeze the hardware resources used in this example
+  * @param huart: UART handle pointer
+  * @retval None
+  */
+void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
+{
+  if(huart->Instance==USART1)
+  {
+    /* USER CODE BEGIN USART1_MspDeInit 0 */
+
+    /* USER CODE END USART1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_USART1_CLK_DISABLE();
+
+    /**USART1 GPIO Configuration
+    PE5     ------> USART1_TX
+    PE6     ------> USART1_RX
+    */
+    HAL_GPIO_DeInit(GPIOE, VCP_TX_Pin|VCP_RX_Pin);
+
+    /* USER CODE BEGIN USART1_MspDeInit 1 */
+
+    /* USER CODE END USART1_MspDeInit 1 */
   }
 
 }

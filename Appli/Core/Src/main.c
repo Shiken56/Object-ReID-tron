@@ -67,6 +67,8 @@ ETH_HandleTypeDef heth1;
 
 I2C_HandleTypeDef hi2c1;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -77,6 +79,7 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ETH1_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void MPU_Config(void);
 
@@ -126,6 +129,7 @@ int main(void)
   MX_ADC2_Init();
   MX_I2C1_Init();
   MX_ETH1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   void knl_start_mtkernel(void);
   knl_start_mtkernel();
@@ -387,6 +391,54 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -401,6 +453,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOO_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
@@ -435,6 +488,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* creating custom MPU Config for ethernet */
+extern uint32_t __snoncacheable;
+extern uint32_t __enoncacheable;
 
 void MPU_Config(void)
 {
@@ -453,8 +508,8 @@ void MPU_Config(void)
      (Update the addresses to match where your ETH buffers live in your linker script) */
   MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
   MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress      = 0x24000000; /* Example: Start of AXI SRAM */
-  MPU_InitStruct.LimitAddress     = 0x2403FFFF; /* Example: 256KB block */
+  MPU_InitStruct.BaseAddress      = (uint32_t)&__snoncacheable;
+  MPU_InitStruct.LimitAddress     = (uint32_t)&__enoncacheable - 1;
   MPU_InitStruct.AttributesIndex  = MPU_ATTRIBUTES_NUMBER0;
   MPU_InitStruct.AccessPermission = MPU_REGION_ALL_RW;
   MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
