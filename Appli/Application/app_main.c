@@ -22,30 +22,51 @@ LOCAL T_CTSK ctsk_net = {				     // Task creation information
 	.tskatr		= TA_HLNG | TA_RNG0,
 };
 
-static void send_raw_broadcast(uint32_t seq)
+
+/* 3. Standard IPv4 UDP Broadcast on Port 5000 (EtherType 0x0800) */
+static void send_raw_udp_broadcast(uint32_t seq)
 {
     uint8_t frame[64];
     memset(frame, 0, sizeof(frame));
 
-    /* Destination MAC: FF:FF:FF:FF:FF:FF (Broadcast) */
+    /* Ethernet Header (14 bytes) */
     memset(&frame[0], 0xFF, 6);
+    frame[6] = 0x00; frame[7] = 0x80; frame[8] = 0xE1;
+    frame[9] = 0x00; frame[10] = 0x00; frame[11] = 0x00;
+    frame[12] = 0x08; frame[13] = 0x00;                 /* EtherType: IPv4 */
 
-    /* Source MAC: 00:80:E1:00:00:00 */
-    frame[6]  = 0x00;
-    frame[7]  = 0x80;
-    frame[8]  = 0xE1;
-    frame[9]  = 0x00;
-    frame[10] = 0x00;
-    frame[11] = 0x00;
+    /* IPv4 Header (20 bytes) */
+    frame[14] = 0x45;
+    uint16_t total_len = 20 + 8 + 18;                   /* IP(20) + UDP(8) + Payload(18) = 46 */
+    frame[16] = (total_len >> 8) & 0xFF;
+    frame[17] = total_len & 0xFF;
+    frame[18] = (seq >> 8) & 0xFF; frame[19] = seq & 0xFF;
+    frame[22] = 64;                                     /* TTL */
+    frame[23] = 17;                                     /* Protocol: UDP */
+    frame[26] = 192; frame[27] = 168; frame[28] = 1; frame[29] = 10;   /* Src IP: 192.168.1.10 */
+    frame[30] = 255; frame[31] = 255; frame[32] = 255; frame[33] = 255; /* Dst IP: 255.255.255.255 */
 
-    /* EtherType: 0x88B5 (IEEE 802 Local Experimental) */
-    frame[12] = 0x88;
-    frame[13] = 0xB5;
+    /* Checksum */
+    uint32_t sum = 0;
+    for (int i = 14; i < 34; i += 2) {
+        sum += ((uint16_t)frame[i] << 8) | frame[i + 1];
+    }
+    while (sum >> 16) {
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+    uint16_t ip_chk = ~sum;
+    frame[24] = (ip_chk >> 8) & 0xFF; frame[25] = ip_chk & 0xFF;
+
+    /* UDP Header (8 bytes) */
+    frame[34] = (5000 >> 8) & 0xFF; frame[35] = 5000 & 0xFF; /* Src Port: 5000 */
+    frame[36] = (5000 >> 8) & 0xFF; frame[37] = 5000 & 0xFF; /* Dst Port: 5000 */
+    uint16_t udp_len = 8 + 18;
+    frame[38] = (udp_len >> 8) & 0xFF; frame[39] = udp_len & 0xFF;
 
     /* Payload */
-    snprintf((char *)&frame[14], sizeof(frame) - 14, "STM32N6 Beacon #%lu", (unsigned long)seq);
+    snprintf((char *)&frame[42], sizeof(frame) - 42, "STM32N6 #%lu", (unsigned long)seq);
 
-    ethernetif_send_raw(frame, 60);
+    ethernetif_send_raw(frame, 14 + total_len);
 }
 
 LOCAL void net_task(INT stacd, void *exinf)
@@ -53,7 +74,6 @@ LOCAL void net_task(INT stacd, void *exinf)
     ip4_addr_t ipaddr;
     ip4_addr_t netmask;
     ip4_addr_t gw;
-    struct udp_pcb *upcb = NULL;
     uint32_t tx_timer = 0;
     uint32_t pkt_seq = 0;
     uint32_t last_rx_count = 0;
@@ -87,43 +107,39 @@ LOCAL void net_task(INT stacd, void *exinf)
     PRINT("[NET] Gateway    : 192.168.1.1\r\n");
     PRINT("[NET] Broadcasting test frames every 1s (check Wireshark!)\r\n");
 
-    /* Create UDP PCB for UDP broadcast */
-    upcb = udp_new();
+    uint32_t heartbeat_timer = 0;
+    uint32_t heartbeat_sec = 0;
 
     while (1)
     {
-        /* Poll Ethernet driver for incoming packets (ARP, ICMP ping, etc.) */
+        /* 1. Poll Ethernet driver for incoming packets (ARP, ICMP ping, etc.) */
         ethernetif_input(&gnetif);
 
-        /* Send broadcast test packet every ~1 second (500 * 2ms) */
+        /* 2. Every ~1 second (500 * 2ms): Check link/speed & send beacon */
         if (++tx_timer >= 500) {
             tx_timer = 0;
             pkt_seq++;
 
-            /* 1. Transmit raw Ethernet broadcast frame */
-            send_raw_broadcast(pkt_seq);
+            /* Dynamic link status & speed detection (1000M vs 100M auto-switch) */
+            ethernetif_check_link_and_speed(&gnetif);
 
-            /* 2. Transmit UDP broadcast packet to 255.255.255.255:12345 */
-            if (upcb != NULL) {
-                struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, 64, PBUF_RAM);
-                if (p != NULL) {
-                    int len = snprintf((char *)p->payload, 64, "STM32N6 UDP Broadcast #%lu\r\n", (unsigned long)pkt_seq);
-                    p->len = (u16_t)len;
-                    p->tot_len = (u16_t)len;
-                    udp_sendto(upcb, p, IP_ADDR_BROADCAST, 12345);
-                    pbuf_free(p);
-                }
-            }
+            /* Send standard IPv4 UDP broadcast on port 5000 (EtherType 0x0800) */
+            send_raw_udp_broadcast(pkt_seq);
         }
 
-        /* Print activity whenever packets are received or transmitted */
-        if (g_rx_pkt_count != last_rx_count || g_tx_pkt_count != last_tx_count) {
-            PRINT("[NET ACTIVITY] RX Total: %lu | TX Total: %lu\r\n",
-                  (unsigned long)g_rx_pkt_count, (unsigned long)g_tx_pkt_count);
-            last_rx_count = g_rx_pkt_count;
-            last_tx_count = g_tx_pkt_count;
+        /* 3. Every ~3 seconds (1500 * 2ms): Network health heartbeat */
+        if (++heartbeat_timer >= 1500) {
+            heartbeat_timer = 0;
+            heartbeat_sec += 3;
+
+            PRINT("[HEARTBEAT %lus] Total RX: %lu pkts | Total TX: %lu pkts | Link: %s\r\n",
+                  (unsigned long)heartbeat_sec,
+                  (unsigned long)g_rx_pkt_count,
+                  (unsigned long)g_tx_pkt_count,
+                  netif_is_link_up(&gnetif) ? "LINK UP" : "LINK DOWN");
         }
 
+        /* microT-Kernel OS delay: yields CPU to TCP/IP thread and idle tasks */
         tk_dly_tsk(2);
     }
 }

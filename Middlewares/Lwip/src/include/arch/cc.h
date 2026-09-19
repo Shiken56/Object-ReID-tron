@@ -16,9 +16,10 @@
 #define PACK_STRUCT_END
 #define PACK_STRUCT_FIELD(x) x
 
-/* Empty diagnostic macros to prevent compiler warnings for now */
-#define LWIP_PLATFORM_DIAG(x)   do { } while(0)
-#define LWIP_PLATFORM_ASSERT(x) do { } while(0)
+/* Route diagnostic macros to microT-Kernel console */
+extern int tm_printf(const unsigned char *format, ...);
+#define LWIP_PLATFORM_DIAG(x)   do { tm_printf x; } while(0)
+#define LWIP_PLATFORM_ASSERT(x) do { tm_printf((const unsigned char *)"[LWIP ASSERT] %s\r\n", (x)); } while(0)
 
 /* Random number generation for network security/ports */
 #define LWIP_RAND() ((uint32_t)rand())

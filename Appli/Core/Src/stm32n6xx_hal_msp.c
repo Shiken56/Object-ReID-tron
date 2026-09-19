@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file         stm32n6xx_hal_msp.c
-  * @brief        This file provides code for the MSP Initialization
-  *               and de-Initialization codes.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file         stm32n6xx_hal_msp.c
+ * @brief        This file provides code for the MSP Initialization
+ *               and de-Initialization codes.
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -223,9 +223,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /* ADC1 interrupt DeInit */
     /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */
     /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
+     * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
+     * Be aware, disabling shared interrupt may affect other IPs
+     */
     /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
     /* USER CODE END ADC1:ADC1_2_IRQn disable */
 
@@ -252,9 +252,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /* ADC2 interrupt DeInit */
     /* USER CODE BEGIN ADC2:ADC1_2_IRQn disable */
     /**
-    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
+     * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
+     * Be aware, disabling shared interrupt may affect other IPs
+     */
     /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
     /* USER CODE END ADC2:ADC1_2_IRQn disable */
 
@@ -307,6 +307,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
     PD12     ------> ETH1_MDIO
+    PD3     ------> ETH1_PHY_INTN
     PF10     ------> ETH1_RGMII_RX_CTL
     PF7     ------> ETH1_RGMII_RX_CLK
     PF5     ------> ETH1_CLK
@@ -322,15 +323,15 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RGMII_TXD0
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_12|GPIO_PIN_3;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_7|ETH_CLK_Pin|GPIO_PIN_15
-                          |GPIO_PIN_14|ETH_RXD2_Pin|ETH_CLK125_Pin|ETH_RXD3_Pin
+    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_7|GPIO_PIN_5|GPIO_PIN_15
+                          |GPIO_PIN_14|ETH_RXD2_Pin|GPIO_PIN_2|ETH_RXD3_Pin
                           |GPIO_PIN_11|GPIO_PIN_13|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -338,7 +339,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* heth)
     GPIO_InitStruct.Alternate = GPIO_AF11_ETH1;
     HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = ETH_TXD3_Pin|ETH_TX2_Pin;
+    GPIO_InitStruct.Pin = ETH_TXD3_Pin|GPIO_PIN_3;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -382,6 +383,7 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     /**ETH1 GPIO Configuration
     PD1     ------> ETH1_MDC
     PD12     ------> ETH1_MDIO
+    PD3     ------> ETH1_PHY_INTN
     PF10     ------> ETH1_RGMII_RX_CTL
     PF7     ------> ETH1_RGMII_RX_CLK
     PF5     ------> ETH1_CLK
@@ -397,13 +399,13 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef* heth)
     PF0     ------> ETH1_RGMII_GTX_CLK
     PF12     ------> ETH1_RGMII_TXD0
     */
-    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1|GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1|GPIO_PIN_12|GPIO_PIN_3);
 
-    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10|GPIO_PIN_7|ETH_CLK_Pin|GPIO_PIN_15
-                          |GPIO_PIN_14|ETH_RXD2_Pin|ETH_CLK125_Pin|ETH_RXD3_Pin
+    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10|GPIO_PIN_7|GPIO_PIN_5|GPIO_PIN_15
+                          |GPIO_PIN_14|ETH_RXD2_Pin|GPIO_PIN_2|ETH_RXD3_Pin
                           |GPIO_PIN_11|GPIO_PIN_13|ETH_GTX_CLK_Pin|GPIO_PIN_12);
 
-    HAL_GPIO_DeInit(GPIOG, ETH_TXD3_Pin|ETH_TX2_Pin);
+    HAL_GPIO_DeInit(GPIOG, ETH_TXD3_Pin|GPIO_PIN_3);
 
     /* USER CODE BEGIN ETH1_MspDeInit 1 */
 

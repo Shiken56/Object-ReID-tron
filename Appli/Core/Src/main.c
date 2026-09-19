@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2026 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file           : main.c
+ * @brief          : Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2026 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -74,6 +74,7 @@ UART_HandleTypeDef huart1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+static void MPU_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
@@ -81,7 +82,6 @@ static void MX_I2C1_Init(void);
 static void MX_ETH1_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-void MPU_Config(void);
 
 /* USER CODE END PFP */
 
@@ -99,10 +99,10 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-  /* 1. Configure the MPU to protect Ethernet RAM */
-  MPU_Config();
-
   /* USER CODE END 1 */
+
+  /* MPU Configuration--------------------------------------------------------*/
+  MPU_Config();
 
   /* Enable the CPU Cache */
 
@@ -137,8 +137,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -181,7 +180,7 @@ static void MX_ADC1_Init(void)
 
   /* USER CODE BEGIN ADC1_Init 1 */
   __HAL_RCC_RIFSC_CLK_ENABLE();
-    RIFSC->RISC_SECCFGRx[2] |= 0x1;
+  RIFSC->RISC_SECCFGRx[2] |= 0x1;
   /* USER CODE END ADC1_Init 1 */
 
   /** Common config
@@ -324,7 +323,11 @@ static void MX_ETH1_Init(void)
   heth1.Init.RxBuffLen = 1536;
 
   /* USER CODE BEGIN MACADDRESS */
-
+  heth1.Init.RxDesc[0] = (ETH_DMADescTypeDef *)0x34100000;
+  heth1.Init.RxDesc[1] = (ETH_DMADescTypeDef *)0x34100060;
+  heth1.Init.TxDesc[0] = (ETH_DMADescTypeDef *)0x341000C0;
+  heth1.Init.TxDesc[1] = (ETH_DMADescTypeDef *)0x34100120;
+  memset((void *)0x34100000, 0, 0x200);
   /* USER CODE END MACADDRESS */
 
   if (HAL_ETH_Init(&heth1) != HAL_OK)
@@ -487,41 +490,69 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-/* creating custom MPU Config for ethernet */
-extern uint32_t __snoncacheable;
-extern uint32_t __enoncacheable;
+/* USER CODE END 4 */
+
+ /* MPU Configuration */
 
 void MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct = {0};
   MPU_Attributes_InitTypeDef MPU_AttributesInit = {0};
+  uint32_t primask_bit = __get_PRIMASK();
+  __disable_irq();
 
-  /* 1. Disable the MPU before making changes */
+  /* Disables the MPU */
   HAL_MPU_Disable();
 
-  /* 2. Create a "Non-Cacheable" attribute profile */
-  MPU_AttributesInit.Number     = MPU_ATTRIBUTES_NUMBER0;
-  MPU_AttributesInit.Attributes = MPU_NOT_CACHEABLE;
-  HAL_MPU_ConfigMemoryAttributes(&MPU_AttributesInit);
-
-  /* 3. Apply this profile to your Ethernet SRAM Region
-     (Update the addresses to match where your ETH buffers live in your linker script) */
-  MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
-  MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
-  MPU_InitStruct.BaseAddress      = (uint32_t)&__snoncacheable;
-  MPU_InitStruct.LimitAddress     = (uint32_t)&__enoncacheable - 1;
-  MPU_InitStruct.AttributesIndex  = MPU_ATTRIBUTES_NUMBER0;
+  /** Initializes and configures the Region 0 and the memory to be protected
+  */
+  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+  MPU_InitStruct.BaseAddress = 0x34100000;
+  MPU_InitStruct.LimitAddress = 0x3410FFFF;
+  MPU_InitStruct.AttributesIndex = MPU_ATTRIBUTES_NUMBER0;
   MPU_InitStruct.AccessPermission = MPU_REGION_ALL_RW;
-  MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable      = MPU_ACCESS_OUTER_SHAREABLE; /* DMA needs to share this */
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.DisablePrivExec = MPU_PRIV_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_OUTER_SHAREABLE;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-  /* 4. Re-enable the MPU with default privileges */
+  /** Initializes and configures the Attribute 0 and the memory to be protected
+  */
+  MPU_AttributesInit.Number = MPU_ATTRIBUTES_NUMBER0;
+  MPU_AttributesInit.Attributes = INNER_OUTER(MPU_NOT_CACHEABLE);
+
+  HAL_MPU_ConfigMemoryAttributes(&MPU_AttributesInit);
+  /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+
+  /* Exit critical section to lock the system and avoid any issue around MPU mechanism */
+  __set_PRIMASK(primask_bit);
+
 }
 
-/* USER CODE END 4 */
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -533,8 +564,7 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
-  {
+  while (1) {
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -549,8 +579,9 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* User can add his own implementation to report the file name and line
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+     line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

@@ -148,12 +148,10 @@ SECTIONS
 
   .noncacheable :
   {
-    . = ALIGN(32);
+    . = ALIGN(8);
     __snoncacheable = .;/* create symbol for start of section */
     KEEP(*(.noncacheable))
-    KEEP(*(.RxDecripSection))
-    KEEP(*(.TxDecripSection))
-    . = ALIGN(32);
+    . = ALIGN(8);
     __enoncacheable = .;  /* create symbol for end of section */
   } > RAM
 

@@ -59,6 +59,7 @@
 									<listOptionValue builtIn="false" value="../../Middlewares/ST/STM32_ExtMem_Manager/psram"/>
 									<listOptionValue builtIn="false" value="../../Middlewares/ST/STM32_ExtMem_Manager/sdcard"/>
 									<listOptionValue builtIn="false" value="../../Middlewares/ST/STM32_ExtMem_Manager/user"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Core/Inc}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.683687468" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
