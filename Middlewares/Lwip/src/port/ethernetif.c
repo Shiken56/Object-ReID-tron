@@ -641,8 +641,12 @@ void HAL_ETH_RxLinkCallback(void **pStart, void **pEnd, uint8_t *buff,
   *pEnd = buff;
 }
 
+#include "lwip/sys.h"
 static uint8_t (*TxBuffers)[1536] = (uint8_t (*)[1536])TX_BUFFERS_BASE_ADDR;
 static ETH_BufferTypeDef Txbuffer[ETH_TX_DESC_CNT];
+static sys_mutex_t tx_mutex;
+static uint8_t tx_mutex_init = 0;
+static uint32_t tx_idx = 0;
 
 /* ========================================================================= */
 /* 1. LOW LEVEL OUTPUT (TRANSMIT)                                            */
@@ -656,25 +660,30 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p) {
   }
 
   /* Copy pbuf chain into contiguous DMA TX buffer */
-  pbuf_copy_partial(p, TxBuffers[0], p->tot_len, 0);
+  sys_mutex_lock(&tx_mutex);
 
-  Txbuffer[0].buffer = TxBuffers[0];
-  Txbuffer[0].len = p->tot_len;
-  Txbuffer[0].next = NULL;
+  pbuf_copy_partial(p, TxBuffers[tx_idx], p->tot_len, 0);
+
+  Txbuffer[tx_idx].buffer = TxBuffers[tx_idx];
+  Txbuffer[tx_idx].len = p->tot_len;
+  Txbuffer[tx_idx].next = NULL;
 
   ETH_TxPacketConfigTypeDef TxConfig = {0};
   TxConfig.Length = p->tot_len;
-  TxConfig.TxBuffer = &Txbuffer[0];
+  TxConfig.TxBuffer = &Txbuffer[tx_idx];
   TxConfig.Attributes = ETH_TX_PACKETS_FEATURES_CRCPAD;
   TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
 
   HAL_StatusTypeDef status = HAL_ETH_Transmit(&heth1, &TxConfig, 100);
 
   if (status != HAL_OK) {
+    sys_mutex_unlock(&tx_mutex);
     return ERR_IF;
   }
 
+  tx_idx = (tx_idx + 1) % ETH_TX_DESC_CNT;
   g_tx_pkt_count++;
+  sys_mutex_unlock(&tx_mutex);
   return ERR_OK;
 }
 
@@ -688,25 +697,30 @@ int8_t ethernetif_send_raw(const uint8_t *data, uint16_t len) {
     return -1;
   }
 
-  memcpy(TxBuffers[0], data, len);
+  sys_mutex_lock(&tx_mutex);
 
-  Txbuffer[0].buffer = TxBuffers[0];
-  Txbuffer[0].len = len;
-  Txbuffer[0].next = NULL;
+  memcpy(TxBuffers[tx_idx], data, len);
+
+  Txbuffer[tx_idx].buffer = TxBuffers[tx_idx];
+  Txbuffer[tx_idx].len = len;
+  Txbuffer[tx_idx].next = NULL;
 
   ETH_TxPacketConfigTypeDef TxConfig = {0};
   TxConfig.Length = len;
-  TxConfig.TxBuffer = &Txbuffer[0];
+  TxConfig.TxBuffer = &Txbuffer[tx_idx];
   TxConfig.Attributes = ETH_TX_PACKETS_FEATURES_CRCPAD;
   TxConfig.CRCPadCtrl = ETH_CRC_PAD_INSERT;
 
   HAL_StatusTypeDef status = HAL_ETH_Transmit(&heth1, &TxConfig, 100);
 
   if (status != HAL_OK) {
+    sys_mutex_unlock(&tx_mutex);
     return -1;
   }
 
+  tx_idx = (tx_idx + 1) % ETH_TX_DESC_CNT;
   g_tx_pkt_count++;
+  sys_mutex_unlock(&tx_mutex);
   return 0;
 }
 
@@ -745,6 +759,11 @@ static struct pbuf *low_level_input(struct netif *netif) {
 static void low_level_init(struct netif *netif) {
   netif->hwaddr_len = ETH_HWADDR_LEN;
 
+  if (!tx_mutex_init) {
+    sys_mutex_new(&tx_mutex);
+    tx_mutex_init = 1;
+  }
+
   netif->hwaddr[0] = heth1.Init.MACAddr[0];
   netif->hwaddr[1] = heth1.Init.MACAddr[1];
   netif->hwaddr[2] = heth1.Init.MACAddr[2];
@@ -765,12 +784,20 @@ static void low_level_init(struct netif *netif) {
   /* Start Ethernet DMA engine */
   HAL_ETH_Start(&heth1);
 
+  /* Configure STM32N6 internal RGMII TX Clock delay (2.75 ns) 
+   * The user requested a 2.75ns lock for the final test. */
+  GPIO_DelayTypeDef DelayInit = {0};
+  DelayInit.Delay = GPIO_DELAY_PS_2750;
+  DelayInit.Path = GPIO_PATH_OUT;
+  HAL_GPIO_SetDelay(GPIOF, GPIO_PIN_0, &DelayInit);
+
   /* Configure MAC Packet Filter:
-   * Enable Promiscuous mode (PR), Receive All (RA), Pass All Multicast (PM),
-   * and ensure Disable Broadcast (DBF) is CLEARED so broadcast ARP is NEVER dropped by MAC. */
+   * Disable Promiscuous mode, Receive All, and Pass All Multicast so the hardware 
+   * automatically filters out background network noise (Broadcast storms).
+   * Ensure Disable Broadcast (DBF) is CLEARED so broadcast ARP is NEVER dropped. */
   MODIFY_REG(heth1.Instance->MACPFR,
-             ETH_MACPFR_DBF,
-             ETH_MACPFR_RA | ETH_MACPFR_PR | ETH_MACPFR_PM);
+             ETH_MACPFR_DBF | ETH_MACPFR_RA | ETH_MACPFR_PR | ETH_MACPFR_PM,
+             0);
 
   /* Wait up to 2.5 seconds for PHY Auto-Negotiation and Link UP */
   uint32_t bmsr = 0;

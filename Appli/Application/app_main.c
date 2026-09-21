@@ -10,6 +10,7 @@
 #include "ethernetif.h"
 #include <stdio.h>
 #include <string.h>
+#include "stm32n6xx_hal.h"
 
 struct netif gnetif;
 
@@ -23,50 +24,40 @@ LOCAL T_CTSK ctsk_net = {				     // Task creation information
 };
 
 
-/* 3. Standard IPv4 UDP Broadcast on Port 5000 (EtherType 0x0800) */
-static void send_raw_udp_broadcast(uint32_t seq)
+/* 3. Standard Ethernet Broadcast ARP Request */
+static void send_raw_arp_request(uint32_t seq)
 {
-    uint8_t frame[64];
+    (void)seq;
+    uint8_t frame[60];
     memset(frame, 0, sizeof(frame));
 
     /* Ethernet Header (14 bytes) */
-    memset(&frame[0], 0xFF, 6);
+    memset(&frame[0], 0xFF, 6);                         /* Dst MAC: Broadcast */
     frame[6] = 0x00; frame[7] = 0x80; frame[8] = 0xE1;
-    frame[9] = 0x00; frame[10] = 0x00; frame[11] = 0x00;
-    frame[12] = 0x08; frame[13] = 0x00;                 /* EtherType: IPv4 */
+    frame[9] = 0x00; frame[10] = 0x00; frame[11] = 0x00;/* Src MAC: 00:80:e1:00:00:00 */
+    frame[12] = 0x08; frame[13] = 0x06;                 /* EtherType: ARP */
 
-    /* IPv4 Header (20 bytes) */
-    frame[14] = 0x45;
-    uint16_t total_len = 20 + 8 + 18;                   /* IP(20) + UDP(8) + Payload(18) = 46 */
-    frame[16] = (total_len >> 8) & 0xFF;
-    frame[17] = total_len & 0xFF;
-    frame[18] = (seq >> 8) & 0xFF; frame[19] = seq & 0xFF;
-    frame[22] = 64;                                     /* TTL */
-    frame[23] = 17;                                     /* Protocol: UDP */
-    frame[26] = 192; frame[27] = 168; frame[28] = 1; frame[29] = 10;   /* Src IP: 192.168.1.10 */
-    frame[30] = 255; frame[31] = 255; frame[32] = 255; frame[33] = 255; /* Dst IP: 255.255.255.255 */
+    /* ARP Payload (28 bytes) */
+    frame[14] = 0x00; frame[15] = 0x01;                 /* Hardware Type: Ethernet (1) */
+    frame[16] = 0x08; frame[17] = 0x00;                 /* Protocol Type: IPv4 (0x0800) */
+    frame[18] = 0x06;                                   /* Hardware Size: 6 */
+    frame[19] = 0x04;                                   /* Protocol Size: 4 */
+    frame[20] = 0x00; frame[21] = 0x01;                 /* Opcode: Request (1) */
 
-    /* Checksum */
-    uint32_t sum = 0;
-    for (int i = 14; i < 34; i += 2) {
-        sum += ((uint16_t)frame[i] << 8) | frame[i + 1];
-    }
-    while (sum >> 16) {
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-    uint16_t ip_chk = ~sum;
-    frame[24] = (ip_chk >> 8) & 0xFF; frame[25] = ip_chk & 0xFF;
+    /* Sender MAC (00:80:e1:00:00:00) */
+    frame[22] = 0x00; frame[23] = 0x80; frame[24] = 0xE1;
+    frame[25] = 0x00; frame[26] = 0x00; frame[27] = 0x00;
+    
+    /* Sender IP (192.168.1.10) */
+    frame[28] = 192; frame[29] = 168; frame[30] = 1; frame[31] = 10;
 
-    /* UDP Header (8 bytes) */
-    frame[34] = (5000 >> 8) & 0xFF; frame[35] = 5000 & 0xFF; /* Src Port: 5000 */
-    frame[36] = (5000 >> 8) & 0xFF; frame[37] = 5000 & 0xFF; /* Dst Port: 5000 */
-    uint16_t udp_len = 8 + 18;
-    frame[38] = (udp_len >> 8) & 0xFF; frame[39] = udp_len & 0xFF;
+    /* Target MAC (00:00:00:00:00:00 - ignored in request) */
+    memset(&frame[32], 0x00, 6);
 
-    /* Payload */
-    snprintf((char *)&frame[42], sizeof(frame) - 42, "STM32N6 #%lu", (unsigned long)seq);
+    /* Target IP (192.168.1.100 - laptop) */
+    frame[38] = 192; frame[39] = 168; frame[40] = 1; frame[41] = 100;
 
-    ethernetif_send_raw(frame, 14 + total_len);
+    ethernetif_send_raw(frame, 42); // 14 + 28 = 42 bytes. DMA will pad to 60.
 }
 
 LOCAL void net_task(INT stacd, void *exinf)
@@ -112,19 +103,19 @@ LOCAL void net_task(INT stacd, void *exinf)
 
     while (1)
     {
-        /* 1. Poll Ethernet driver for incoming packets (ARP, ICMP ping, etc.) */
+        /* 1. Poll Ethernet driver for incoming packets */
         ethernetif_input(&gnetif);
 
         /* 2. Every ~1 second (500 * 2ms): Check link/speed & send beacon */
         if (++tx_timer >= 500) {
             tx_timer = 0;
             pkt_seq++;
-
-            /* Dynamic link status & speed detection (1000M vs 100M auto-switch) */
+            
+            /* Dynamic link status & speed detection */
             ethernetif_check_link_and_speed(&gnetif);
 
-            /* Send standard IPv4 UDP broadcast on port 5000 (EtherType 0x0800) */
-            send_raw_udp_broadcast(pkt_seq);
+            /* Send raw ARP Request to bypass router unicast filters */
+            send_raw_arp_request(pkt_seq);
         }
 
         /* 3. Every ~3 seconds (1500 * 2ms): Network health heartbeat */
