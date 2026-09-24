@@ -10,19 +10,19 @@
 #define LWIP_TCP 1
 #define LWIP_ICMP 1
 
-// Basic memory settings (can be tuned later)
+// Massive memory pool to hold an entire 150KB frame at once!
 #define MEM_ALIGNMENT 4
-#define MEM_SIZE (10 * 1024)
+#define MEM_SIZE (256 * 1024)
 
 // OS Thread Stack Sizes (Crucial for preventing Usage Faults)
 #define TCPIP_THREAD_STACKSIZE 4096
 #define TCPIP_THREAD_PRIO 8
 #define TCPIP_MBOX_SIZE 32
 #define DEFAULT_THREAD_STACKSIZE 4096
-#define DEFAULT_TCP_RECVMBOX_SIZE 32
-#define DEFAULT_UDP_RECVMBOX_SIZE 32
-#define DEFAULT_RAW_RECVMBOX_SIZE 32
-#define DEFAULT_ACCEPTMBOX_SIZE 32
+#define DEFAULT_TCP_RECVMBOX_SIZE 128
+#define DEFAULT_UDP_RECVMBOX_SIZE 128
+#define DEFAULT_RAW_RECVMBOX_SIZE 128
+#define DEFAULT_ACCEPTMBOX_SIZE 128
 
 // Debugging options
 #define LWIP_DEBUG 1

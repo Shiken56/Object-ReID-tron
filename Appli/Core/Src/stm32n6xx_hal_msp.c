@@ -304,7 +304,10 @@ void HAL_DCMIPP_MspInit(DCMIPP_HandleTypeDef* hdcmipp)
     HAL_NVIC_SetPriority(CSI_IRQn, 15, 0);
     HAL_NVIC_EnableIRQ(CSI_IRQn);
     /* USER CODE BEGIN DCMIPP_MspInit 1 */
-
+    __HAL_RCC_DCMIPP_FORCE_RESET();
+    __HAL_RCC_DCMIPP_RELEASE_RESET();
+    HAL_NVIC_SetPriority(DCMIPP_IRQn, 7, 0);
+    HAL_NVIC_SetPriority(CSI_IRQn, 7, 0);
     /* USER CODE END DCMIPP_MspInit 1 */
 
   }

@@ -6,9 +6,9 @@ import cv2
 # Configuration
 UDP_IP = "0.0.0.0" # Listen on all network interfaces
 UDP_PORT = 5000
-IMG_WIDTH = 800
-IMG_HEIGHT = 480
-CHANNELS = 2
+IMG_WIDTH = 224
+IMG_HEIGHT = 224
+CHANNELS = 3
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -20,9 +20,9 @@ print(f"Listening on UDP port {UDP_PORT} for STM32 camera stream...")
 HEADER_FORMAT = "<IHH"
 HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
 
+# Create a persistent frame buffer to hold the image
+frame_buffer = bytearray(IMG_WIDTH * IMG_HEIGHT * CHANNELS)
 current_frame_id = -1
-frame_chunks = {}
-expected_chunks = 0
 
 try:
     while True:
@@ -36,40 +36,37 @@ try:
         
         frame_id, chunk_idx, total_chunks = struct.unpack(HEADER_FORMAT, header)
         
-        # If we get a chunk for a new frame, clear old partial frames
-        if frame_id > current_frame_id:
-            current_frame_id = frame_id
-            frame_chunks = {}
-            expected_chunks = total_chunks
-            
-        # Ignore delayed chunks from older frames
+        # If we get a chunk from a very old frame, ignore it
         if frame_id < current_frame_id:
             continue
             
-        frame_chunks[chunk_idx] = payload
-        
-        # Check if we have received all chunks for the current frame
-        if len(frame_chunks) == expected_chunks:
-            # Reassemble the frame byte array
-            frame_data = b"".join(frame_chunks[i] for i in range(expected_chunks))
+        if frame_id > current_frame_id:
+            current_frame_id = frame_id
+            # We purposely do NOT clear the frame_buffer here! 
+            # If a chunk drops, it will just show the pixels from the previous frame, preventing glitches!
             
-            # Make sure the length matches exactly what we expect (224 * 224 * 3)
-            expected_bytes = IMG_WIDTH * IMG_HEIGHT * CHANNELS
-            if len(frame_data) == expected_bytes:
-                # Convert bytes to numpy array
-                img_array = np.frombuffer(frame_data, dtype=np.uint8)
-                img = img_array.reshape((IMG_HEIGHT, IMG_WIDTH, CHANNELS))
-                
-                # OpenCV expects BGR format by default. The STM32 display buffer is RGB565.
-                img_bgr = cv2.cvtColor(img, cv2.COLOR_BGR5652BGR)
-                
-                cv2.imshow("STM32 Camera Stream", img_bgr)
-                
-                # Press 'q' to quit
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-            else:
-                print(f"Warning: Reassembled frame size {len(frame_data)} doesn't match expected {expected_bytes}")
+        # Calculate exactly where this chunk belongs in the massive image array
+        offset = chunk_idx * 1024
+        end_offset = offset + len(payload)
+        
+        # Write the payload directly into the correct spot in the image buffer
+        frame_buffer[offset:end_offset] = payload
+        
+        # Display the image! We update the screen every time we get the last chunk,
+        # OR every 50 chunks, so you can see the image drawing live even if the last chunk is dropped!
+        if chunk_idx == total_chunks - 1 or chunk_idx % 50 == 0:
+            img_array = np.frombuffer(frame_buffer, dtype=np.uint8)
+            img = img_array.reshape((IMG_HEIGHT, IMG_WIDTH, CHANNELS))
+            
+            img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            
+            # Since 224x224 is small on a PC monitor, scale it up 3x for easy viewing!
+            img_bgr_large = cv2.resize(img_bgr, (IMG_WIDTH * 3, IMG_HEIGHT * 3), interpolation=cv2.INTER_NEAREST)
+            
+            cv2.imshow("STM32 Live Stream", img_bgr_large)
+            
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
                 
 except KeyboardInterrupt:
     print("\nStream stopped by user.")
