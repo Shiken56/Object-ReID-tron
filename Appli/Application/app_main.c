@@ -12,6 +12,8 @@
 #include <string.h>
 #include "stm32n6xx_hal.h"
 
+#include "app_camera.h"
+
 struct netif gnetif;
 
 LOCAL void net_task(INT stacd, void *exinf); // task execution function
@@ -22,6 +24,16 @@ LOCAL T_CTSK ctsk_net = {				     // Task creation information
 	.task		= net_task,
 	.tskatr		= TA_HLNG | TA_RNG0,
 };
+
+/* Camera Task Configuration */
+LOCAL ID	tskid_cam;
+LOCAL T_CTSK ctsk_cam = {
+	.itskpri	= 11,
+	.stksz		= 4096,
+	.task		= camera_task,
+	.tskatr		= TA_HLNG | TA_RNG0,
+};
+
 
 
 /* 3. Standard Ethernet Broadcast ARP Request */
@@ -140,6 +152,10 @@ EXPORT INT usermain(void)
 	/* Create & Start Network Task */
 	tskid_net = tk_cre_tsk(&ctsk_net);
 	tk_sta_tsk(tskid_net, 0);
+
+	/* Create & Start Camera Task */
+	tskid_cam = tk_cre_tsk(&ctsk_cam);
+	tk_sta_tsk(tskid_cam, 0);
 
 	tk_slp_tsk(TMO_FEVR);
 

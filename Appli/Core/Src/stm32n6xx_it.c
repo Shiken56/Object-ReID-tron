@@ -59,11 +59,15 @@
 /* External variables --------------------------------------------------------*/
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
+extern DCMIPP_HandleTypeDef hdcmipp;
 extern I2C_HandleTypeDef hi2c1;
 extern TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN EV */
+extern DCMIPP_HandleTypeDef hcamera_dcmipp;
 
+volatile uint32_t dcmipp_irq_count = 0;
+volatile uint32_t csi_irq_count = 0;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -235,6 +239,20 @@ void ADC1_2_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DCMIPP global interrupt.
+  */
+void DCMIPP_IRQHandler(void)
+{
+  /* USER CODE BEGIN DCMIPP_IRQn 0 */
+  dcmipp_irq_count++;
+  /* USER CODE END DCMIPP_IRQn 0 */
+  HAL_DCMIPP_IRQHandler(&hcamera_dcmipp);
+  /* USER CODE BEGIN DCMIPP_IRQn 1 */
+
+  /* USER CODE END DCMIPP_IRQn 1 */
+}
+
+/**
   * @brief This function handles I2C1 Event interrupt.
   */
 void I2C1_EV_IRQHandler(void)
@@ -274,6 +292,20 @@ void TIM6_IRQHandler(void)
   /* USER CODE BEGIN TIM6_IRQn 1 */
 
   /* USER CODE END TIM6_IRQn 1 */
+}
+
+/**
+  * @brief This function handles CSI global interrupt.
+  */
+void CSI_IRQHandler(void)
+{
+  /* USER CODE BEGIN CSI_IRQn 0 */
+  csi_irq_count++;
+  /* USER CODE END CSI_IRQn 0 */
+  HAL_DCMIPP_CSI_IRQHandler(&hcamera_dcmipp);
+  /* USER CODE BEGIN CSI_IRQn 1 */
+
+  /* USER CODE END CSI_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

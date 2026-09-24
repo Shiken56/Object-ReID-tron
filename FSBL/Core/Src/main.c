@@ -228,7 +228,14 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL1.PLLP2 = 1;
   RCC_OscInitStruct.PLL2.PLLState = RCC_PLL_NONE;
   RCC_OscInitStruct.PLL3.PLLState = RCC_PLL_NONE;
-  RCC_OscInitStruct.PLL4.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL4.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL4.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL4.PLLM = 1;
+  RCC_OscInitStruct.PLL4.PLLN = 25;
+  RCC_OscInitStruct.PLL4.PLLFractional = 0;
+  RCC_OscInitStruct.PLL4.PLLP1 = 1;
+  RCC_OscInitStruct.PLL4.PLLP2 = 1;
+
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -356,11 +363,25 @@ static void MX_MDF1_Init(void)
   RIMC_MasterConfig_t RIMC_master = {0};
   RIMC_master.MasterCID = RIF_CID_1;
   RIMC_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
+  HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_DCMIPP, &RIMC_master);
+
   HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_ETH1, &RIMC_master);
 
   /*RISUP configuration*/
+  HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_I2C1 , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
   HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ETH1 , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
   HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_ADC12 , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_NPRIV);
+  HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_CSI , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
+  HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_DCMIPP , RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
+
+  /*IAC configuration*/
+  HAL_RIF_IAC_EnableIT(RIF_RISC_PERIPH_INDEX_CSI);
+  HAL_RIF_IAC_EnableIT(RIF_RISC_PERIPH_INDEX_DCMIPP);
+  HAL_RIF_IAC_EnableIT(RIF_RISC_PERIPH_INDEX_I2C1);
+
+  /* IAC interrupt Init */
+  HAL_NVIC_SetPriority(IAC_IRQn, 0x0, 0x0);
+  HAL_NVIC_EnableIRQ(IAC_IRQn);
 
   /* RIF-Aware IPs Config */
 

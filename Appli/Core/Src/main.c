@@ -63,6 +63,8 @@ ETH_TxPacketConfigTypeDef TxConfig;
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
+DCMIPP_HandleTypeDef hdcmipp;
+
 ETH_HandleTypeDef heth1;
 
 I2C_HandleTypeDef hi2c1;
@@ -81,6 +83,7 @@ static void MX_ADC2_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_ETH1_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_DCMIPP_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -130,6 +133,7 @@ int main(void)
   MX_I2C1_Init();
   MX_ETH1_Init();
   MX_USART1_UART_Init();
+  MX_DCMIPP_Init();
   /* USER CODE BEGIN 2 */
   void knl_start_mtkernel(void);
   knl_start_mtkernel();
@@ -286,6 +290,81 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief DCMIPP Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_DCMIPP_Init(void)
+{
+
+  /* USER CODE BEGIN DCMIPP_Init 0 */
+
+  /* USER CODE END DCMIPP_Init 0 */
+
+  DCMIPP_CSI_PIPE_ConfTypeDef pCSI_PipeConfig = {0};
+  DCMIPP_CSI_ConfTypeDef pCSI_Config = {0};
+  DCMIPP_PipeConfTypeDef pPipeConfig = {0};
+
+  /* USER CODE BEGIN DCMIPP_Init 1 */
+
+  /* USER CODE END DCMIPP_Init 1 */
+  hdcmipp.Instance = DCMIPP;
+  if (HAL_DCMIPP_Init(&hdcmipp) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Pipe 0 Config
+  */
+  pCSI_PipeConfig.DataTypeMode = DCMIPP_DTMODE_DTIDA;
+  pCSI_PipeConfig.DataTypeIDA = DCMIPP_DT_RAW10;
+  pCSI_PipeConfig.DataTypeIDB = DCMIPP_DT_YUV420_8;
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE0, &pCSI_PipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  pCSI_Config.PHYBitrate = DCMIPP_CSI_PHY_BT_80;
+  pCSI_Config.DataLaneMapping = DCMIPP_CSI_PHYSICAL_DATA_LANES;
+  pCSI_Config.NumberOfLanes = DCMIPP_CSI_TWO_DATA_LANES;
+  if (HAL_DCMIPP_CSI_SetConfig(&hdcmipp, &pCSI_Config) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  pPipeConfig.FrameRate = DCMIPP_FRAME_RATE_ALL;
+  pPipeConfig.PixelPipePitch = 10;
+  pPipeConfig.PixelPackerFormat = DCMIPP_PIXEL_PACKER_FORMAT_RGB888_YUV444_1;
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE0, &pPipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  HAL_DCMIPP_CSI_SetVCConfig(&hdcmipp, 0U, DCMIPP_CSI_DT_BPP6);
+
+  /** Pipe 1 Config
+  */
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE1, &pCSI_PipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE1, &pPipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN DCMIPP_Init 2 */
+  /** Pipe 2 Config (Needed for Machine Learning Scaling)
+  */
+  if (HAL_DCMIPP_CSI_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE2, &pCSI_PipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_DCMIPP_PIPE_SetConfig(&hdcmipp, DCMIPP_PIPE2, &pPipeConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE END DCMIPP_Init 2 */
 
 }
 
