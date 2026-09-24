@@ -69,6 +69,11 @@ void camera_task(INT stacd, void *exinf) {
     PRINT("[PSRAM ERROR] PSRAM read/write verification FAILED!\r\n");
   }
 
+  /* Initialize UDP Video Streamer */
+  PRINT("[CAMERA] Initializing UDP Streamer...\r\n");
+  #include "app_camera_ethernet_test.h"
+  Ethernet_Streamer_Init();
+
   uint32_t lcd_bg_width, lcd_bg_height, pitch_nn;
   PRINT("[CAMERA] Initializing Camera Pipeline (reference "
         "implementation)...\r\n");
@@ -124,6 +129,9 @@ void camera_task(INT stacd, void *exinf) {
 
     /* Invalidate Cache to ensure CPU reads fresh DMA data from RAM */
     SCB_InvalidateDCache_by_Addr((uint32_t *)ml_buffer, sizeof(ml_buffer));
+
+    /* Send frame over Ethernet */
+    Ethernet_Streamer_SendFrame(ml_buffer, ML_WIDTH, ML_HEIGHT);
 
     /* Background process for Auto-Exposure & ISP stats update */
     CMW_CAMERA_Run();
