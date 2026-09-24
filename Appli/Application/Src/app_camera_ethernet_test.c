@@ -7,10 +7,10 @@
 /* ========================================== */
 /* CHANGE THIS TO YOUR LAPTOP'S ETHERNET IP   */
 /* ========================================== */
-#define PC_IP_1 169
-#define PC_IP_2 254
-#define PC_IP_3 81
-#define PC_IP_4 194
+#define PC_IP_1 192
+#define PC_IP_2 168
+#define PC_IP_3 1
+#define PC_IP_4 100
 
 #define TARGET_PORT 5000
 #define UDP_CHUNK_SIZE 1024
@@ -34,7 +34,7 @@ void Ethernet_Streamer_Init(void) {
     }
 }
 
-void Ethernet_Streamer_SendFrame(uint8_t *frame_buffer, uint32_t width, uint32_t height) {
+void Ethernet_Streamer_SendFrame(uint8_t *frame_buffer, uint32_t width, uint32_t height, uint8_t bytes_per_pixel) {
     static uint32_t frame_counter = 0;
     static uint32_t throttle = 0;
     
@@ -46,7 +46,7 @@ void Ethernet_Streamer_SendFrame(uint8_t *frame_buffer, uint32_t width, uint32_t
     if (throttle % 9 != 0) return;
 
     frame_counter++;
-    uint32_t total_bytes = width * height * 3; // Assuming RGB888
+    uint32_t total_bytes = width * height * bytes_per_pixel;
     uint16_t total_chunks = (total_bytes + UDP_CHUNK_SIZE - 1) / UDP_CHUNK_SIZE;
 
     uint32_t offset = 0;

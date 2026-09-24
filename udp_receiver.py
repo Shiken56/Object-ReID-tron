@@ -6,9 +6,9 @@ import cv2
 # Configuration
 UDP_IP = "0.0.0.0" # Listen on all network interfaces
 UDP_PORT = 5000
-IMG_WIDTH = 224
-IMG_HEIGHT = 224
-CHANNELS = 3
+IMG_WIDTH = 800
+IMG_HEIGHT = 480
+CHANNELS = 2
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -60,14 +60,10 @@ try:
                 img_array = np.frombuffer(frame_data, dtype=np.uint8)
                 img = img_array.reshape((IMG_HEIGHT, IMG_WIDTH, CHANNELS))
                 
-                # OpenCV expects BGR format by default, but STM32 might be sending RGB
-                # Convert RGB to BGR for display
-                img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                # OpenCV expects BGR format by default. The STM32 display buffer is RGB565.
+                img_bgr = cv2.cvtColor(img, cv2.COLOR_BGR5652BGR)
                 
-                # Resize it so it's easier to see on PC (e.g., 2x or 3x scale)
-                img_bgr_large = cv2.resize(img_bgr, (IMG_WIDTH * 3, IMG_HEIGHT * 3), interpolation=cv2.INTER_NEAREST)
-                
-                cv2.imshow("STM32 Camera Stream", img_bgr_large)
+                cv2.imshow("STM32 Camera Stream", img_bgr)
                 
                 # Press 'q' to quit
                 if cv2.waitKey(1) & 0xFF == ord('q'):

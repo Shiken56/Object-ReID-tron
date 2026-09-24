@@ -129,9 +129,10 @@ void camera_task(INT stacd, void *exinf) {
 
     /* Invalidate Cache to ensure CPU reads fresh DMA data from RAM */
     SCB_InvalidateDCache_by_Addr((uint32_t *)ml_buffer, sizeof(ml_buffer));
+    SCB_InvalidateDCache_by_Addr((uint32_t *)display_buffer, sizeof(display_buffer));
 
-    /* Send frame over Ethernet */
-    Ethernet_Streamer_SendFrame(ml_buffer, ML_WIDTH, ML_HEIGHT);
+    /* Send frame over Ethernet (800x480 RGB565) */
+    Ethernet_Streamer_SendFrame(display_buffer, 800, 480, 2);
 
     /* Background process for Auto-Exposure & ISP stats update */
     CMW_CAMERA_Run();
