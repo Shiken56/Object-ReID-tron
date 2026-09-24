@@ -15,7 +15,10 @@ ID sem_camera_pipe0_ready;
 /* Allocate RAM buffer for the camera DMA (aligned for 32-byte cache line ops)
  */
 __attribute__((aligned(32))) __attribute__((
-    section(".noncacheable"))) uint8_t ml_buffer[ML_WIDTH * ML_HEIGHT * 3];
+    section(".psram_bss"))) uint8_t ml_buffer[ML_WIDTH * ML_HEIGHT * 3];
+
+__attribute__((aligned(32))) __attribute__((
+    section(".psram_bss"))) uint8_t display_buffer[800 * 480 * 2];
 
 /* This callback is fired by the Middleware when a frame is ready */
 int CMW_CAMERA_PIPE_FrameEventCallback(uint32_t pipe) {
@@ -53,11 +56,12 @@ void camera_task(INT stacd, void *exinf) {
   /* Fill buffer with a specific pattern (0xAA) to test if DMA is overwriting it
    */
   memset((void *)ml_buffer, 0xAA, sizeof(ml_buffer));
-  SCB_CleanInvalidateDCache_by_Addr((uint32_t *)ml_buffer, sizeof(ml_buffer));
-
+  memset((void *)display_buffer, 0xAA, sizeof(display_buffer));
+  
+  CameraPipeline_DisplayPipe_Start(display_buffer, CMW_MODE_CONTINUOUS);
   CameraPipeline_NNPipe_Start(ml_buffer, CMW_MODE_CONTINUOUS);
 
-  PRINT("[CAMERA] Streaming started on Pipe 2! Waiting for frames...\r\n\r\n");
+  PRINT("[CAMERA] Streaming started on Pipe 1 & 2! Waiting for frames...\r\n\r\n");
 
   uint32_t frame_count = 0;
   uint32_t last_tick = HAL_GetTick();
@@ -100,7 +104,7 @@ void camera_task(INT stacd, void *exinf) {
     SCB_InvalidateDCache_by_Addr((uint32_t *)ml_buffer, sizeof(ml_buffer));
 
     /* Background process for Auto-Exposure & ISP stats update */
-    // CMW_CAMERA_Run();
+    CMW_CAMERA_Run();
 
     frame_count++;
 

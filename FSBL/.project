@@ -37,9 +37,9 @@
 			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Drivers/STM32N6xx_HAL_Driver/Src</location>
 		</link>
 		<link>
-			<name>Middlewares/ST/STM32_ExtMem_Manager</name>
+			<name>Middlewares/ST</name>
 			<type>2</type>
-			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/ST/STM32_ExtMem_Manager</location>
+			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/ST</location>
 		</link>
 	</linkedResources>
 </projectDescription>

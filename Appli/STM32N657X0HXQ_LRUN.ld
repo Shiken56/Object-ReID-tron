@@ -46,6 +46,7 @@ MEMORY
 {
   ROM    (xrw)    : ORIGIN = 0x34000400,   LENGTH = 511K
   RAM    (xrw)    : ORIGIN = 0x34080000,   LENGTH = 1536K
+  PSRAM  (xrw)    : ORIGIN = 0x90000000,   LENGTH = 32M
 }
 
 /* Sections */
@@ -179,6 +180,14 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+
+  .psram_bss (NOLOAD) :
+  {
+    . = ALIGN(32);
+    *(.psram_bss)
+    *(.psram_bss*)
+    . = ALIGN(32);
+  } >PSRAM
 
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
   ._user_heap_stack :

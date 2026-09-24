@@ -34,6 +34,10 @@ extern "C" {
 #define USE_COM_LOG                         0U
 #define USE_BSP_COM_FEATURE                 1U
 
+/* XSPI memories defines */
+#define USE_NOR_MEMORY_MX66UW1G45G          0U
+#define USE_RAM_MEMORY_APS256XX              1U
+
 /* Touch Sensing controller defines */
 #define USE_FT5336_TS_CTRL                  1U
 /* TS supported features defines */
