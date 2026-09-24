@@ -47,6 +47,28 @@ void camera_task(INT stacd, void *exinf) {
     return;
   }
 
+  /* 0. PSRAM Read/Write Integrity Test */
+  PRINT("[PSRAM] Testing PSRAM at 0x90000000...\r\n");
+  volatile uint32_t *p_test = (volatile uint32_t *)0x90000000;
+  uint32_t test_patterns[4] = {0x12345678, 0xDEADBEEF, 0x55AA55AA, 0xCAFEBABE};
+  int psram_ok = 1;
+  for (int i = 0; i < 4; i++) {
+    p_test[i] = test_patterns[i];
+  }
+  for (int i = 0; i < 4; i++) {
+    uint32_t read_val = p_test[i];
+    if (read_val != test_patterns[i]) {
+      PRINT("[PSRAM ERROR] Offset %d: wrote 0x%08lX, read back 0x%08lX!\r\n",
+            i * 4, test_patterns[i], read_val);
+      psram_ok = 0;
+    }
+  }
+  if (psram_ok) {
+    PRINT("[PSRAM SUCCESS] PSRAM read/write verified successfully!\r\n");
+  } else {
+    PRINT("[PSRAM ERROR] PSRAM read/write verification FAILED!\r\n");
+  }
+
   uint32_t lcd_bg_width, lcd_bg_height, pitch_nn;
   PRINT("[CAMERA] Initializing Camera Pipeline (reference "
         "implementation)...\r\n");
@@ -87,13 +109,13 @@ void camera_task(INT stacd, void *exinf) {
 #if defined(CSI_NS)
       csi = CSI_NS;
 #endif
-      PRINT("  [DCMIPP] CMSR1: 0x%08lX | CMSR2: 0x%08lX | CMIER: 0x%08lX\r\n",
-            dcmipp->CMSR1, dcmipp->CMSR2, dcmipp->CMIER);
-      PRINT("  [DCMIPP] P2SR: 0x%08lX | P2IER: 0x%08lX\r\n", dcmipp->P2SR,
-            dcmipp->P2IER);
-      PRINT("  [CSI] SR0: 0x%08lX | SR1: 0x%08lX | IER0: 0x%08lX | IER1: "
+      PRINT("  [DCMIPP] CMCR: 0x%08lX | CMSR1: 0x%08lX | CMSR2: 0x%08lX | CMIER: 0x%08lX\r\n",
+            dcmipp->CMCR, dcmipp->CMSR1, dcmipp->CMSR2, dcmipp->CMIER);
+      PRINT("  [DCMIPP] P1SR: 0x%08lX | P2SR: 0x%08lX | P2IER: 0x%08lX\r\n",
+            dcmipp->P1SR, dcmipp->P2SR, dcmipp->P2IER);
+      PRINT("  [CSI] CR: 0x%08lX | SR0: 0x%08lX | SR1: 0x%08lX | IER0: 0x%08lX | IER1: "
             "0x%08lX\r\n",
-            csi->SR0, csi->SR1, csi->IER0, csi->IER1);
+            csi->CR, csi->SR0, csi->SR1, csi->IER0, csi->IER1);
       PRINT("  [CSI] ERR1: 0x%08lX | ERR2: 0x%08lX\r\n", csi->ERR1, csi->ERR2);
 
       // CMW_CAMERA_Run();

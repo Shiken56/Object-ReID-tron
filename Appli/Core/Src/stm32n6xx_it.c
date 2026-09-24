@@ -246,7 +246,7 @@ void DCMIPP_IRQHandler(void)
   /* USER CODE BEGIN DCMIPP_IRQn 0 */
   dcmipp_irq_count++;
   /* USER CODE END DCMIPP_IRQn 0 */
-  HAL_DCMIPP_IRQHandler(&hdcmipp);
+  HAL_DCMIPP_IRQHandler(&hcamera_dcmipp);
   /* USER CODE BEGIN DCMIPP_IRQn 1 */
 
   /* USER CODE END DCMIPP_IRQn 1 */
@@ -302,7 +302,7 @@ void CSI_IRQHandler(void)
   /* USER CODE BEGIN CSI_IRQn 0 */
   csi_irq_count++;
   /* USER CODE END CSI_IRQn 0 */
-  HAL_DCMIPP_CSI_IRQHandler(&hdcmipp);
+  HAL_DCMIPP_CSI_IRQHandler(&hcamera_dcmipp);
   /* USER CODE BEGIN CSI_IRQn 1 */
 
   /* USER CODE END CSI_IRQn 1 */
