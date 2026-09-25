@@ -63,6 +63,8 @@ ETH_TxPacketConfigTypeDef TxConfig;
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
+CACHEAXI_HandleTypeDef hcacheaxi;
+
 DCMIPP_HandleTypeDef hdcmipp;
 
 ETH_HandleTypeDef heth1;
@@ -87,6 +89,7 @@ static void MX_ETH1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_DCMIPP_Init(void);
 static void MX_XSPI1_Init(void);
+static void MX_CACHEAXI_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -138,6 +141,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_DCMIPP_Init();
   MX_XSPI1_Init();
+  MX_CACHEAXI_Init();
   /* USER CODE BEGIN 2 */
   /* Initialize the External PSRAM (HyperRAM) on XSPI1 */
   if (BSP_XSPI_RAM_Init(0) != 0)
@@ -306,6 +310,32 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief CACHEAXI Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CACHEAXI_Init(void)
+{
+
+  /* USER CODE BEGIN CACHEAXI_Init 0 */
+
+  /* USER CODE END CACHEAXI_Init 0 */
+
+  /* USER CODE BEGIN CACHEAXI_Init 1 */
+
+  /* USER CODE END CACHEAXI_Init 1 */
+  hcacheaxi.Instance = CACHEAXI;
+  if (HAL_CACHEAXI_Init(&hcacheaxi) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CACHEAXI_Init 2 */
+
+  /* USER CODE END CACHEAXI_Init 2 */
 
 }
 

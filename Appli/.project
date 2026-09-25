@@ -45,6 +45,11 @@
 			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Drivers/STM32N6xx_HAL_Driver/Src</location>
 		</link>
 		<link>
+			<name>Middlewares/AI</name>
+			<type>2</type>
+			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/AI</location>
+		</link>
+		<link>
 			<name>Middlewares/Camera_Middleware</name>
 			<type>2</type>
 			<location>C:/Users/aayus/Documents/tron_26/master/mtk3bsp2_stm32n657/Middlewares/Camera_Middleware</location>
