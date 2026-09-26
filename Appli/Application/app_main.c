@@ -13,6 +13,7 @@
 #include "stm32n6xx_hal.h"
 
 #include "app_camera.h"
+#include "app_od.h"
 
 struct netif gnetif;
 
@@ -79,9 +80,6 @@ LOCAL void net_task(INT stacd, void *exinf)
     ip4_addr_t gw;
     uint32_t tx_timer = 0;
     uint32_t pkt_seq = 0;
-    uint32_t last_rx_count = 0;
-    uint32_t last_tx_count = 0;
-
     PRINT("\r\n========================================\r\n");
     PRINT("  STM32N657 Ethernet TX & Ping Test    \r\n");
     PRINT("========================================\r\n");
@@ -156,6 +154,9 @@ EXPORT INT usermain(void)
 	/* Create & Start Camera Task */
 	tskid_cam = tk_cre_tsk(&ctsk_cam);
 	tk_sta_tsk(tskid_cam, 0);
+
+	/* Start OD Task */
+	start_od_task();
 
 	tk_slp_tsk(TMO_FEVR);
 

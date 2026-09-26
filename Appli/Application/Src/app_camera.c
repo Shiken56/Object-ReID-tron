@@ -6,8 +6,8 @@
 
 #define PRINT(fmt, ...) tm_printf((const UB *)(fmt), ##__VA_ARGS__)
 
-#define ML_WIDTH 224
-#define ML_HEIGHT 224
+#define ML_WIDTH 256
+#define ML_HEIGHT 256
 
 /* TRON Semaphore ID */
 ID sem_camera_pipe0_ready;
@@ -131,8 +131,13 @@ void camera_task(INT stacd, void *exinf) {
     SCB_InvalidateDCache_by_Addr((uint32_t *)ml_buffer, sizeof(ml_buffer));
     SCB_InvalidateDCache_by_Addr((uint32_t *)display_buffer, sizeof(display_buffer));
 
-    /* Send frame over Ethernet (224x224 RGB888) */
+    /* Send frame over Ethernet (256x256 RGB888) */
     Ethernet_Streamer_SendFrame(ml_buffer, ML_WIDTH, ML_HEIGHT, 3);
+
+    extern ID sem_od_frame_ready;
+    if (sem_od_frame_ready > 0) {
+      tk_sig_sem(sem_od_frame_ready, 1);
+    }
 
     /* Background process for Auto-Exposure & ISP stats update */
     CMW_CAMERA_Run();

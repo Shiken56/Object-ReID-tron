@@ -103,7 +103,7 @@
 
 /* Default values for the other remaining optional macros */
 #ifndef LL_ATON_SW_FALLBACK
-#define LL_ATON_SW_FALLBACK 0
+#define LL_ATON_SW_FALLBACK 1
 #elif LL_ATON_SW_FALLBACK != 0 && LL_ATON_SW_FALLBACK != 1
 #undef LL_ATON_SW_FALLBACK
 #define LL_ATON_SW_FALLBACK 1

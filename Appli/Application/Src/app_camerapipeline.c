@@ -19,6 +19,7 @@
 #include "cmw_camera.h"
 #include "app_camerapipeline.h"
 #include <tm/tmonitor.h>
+#define PRINT(fmt, ...) tm_printf((const UB *)(fmt), ##__VA_ARGS__)
 #if defined(USE_IMX335_SENSOR)
   #define GAMMA_CONVERSION 0
 #elif defined(USE_VD66GY_SENSOR)
@@ -29,8 +30,8 @@
   #define GAMMA_CONVERSION 0
 #endif
 
-#define NN_WIDTH  224
-#define NN_HEIGHT 224
+#define NN_WIDTH  256
+#define NN_HEIGHT 256
 #define NN_BPP    3
 #define SCREEN_HEIGHT 480
 #define SCREEN_WIDTH  800
@@ -69,10 +70,10 @@ static void DCMIPP_PipeInitDisplay(CMW_CameraInit_t *camConf, uint32_t *bg_width
   uint32_t pitch;
   ret = CMW_CAMERA_SetPipeConfig(DCMIPP_PIPE1, &dcmipp_conf, &pitch);
   if (ret != HAL_OK) {
-    tm_printf("[CAMERA ERROR] SetPipeConfig PIPE1 failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] SetPipeConfig PIPE1 failed: %d\r\n", ret);
   }
   if (dcmipp_conf.output_width * dcmipp_conf.output_bpp != pitch) {
-    tm_printf("[CAMERA WARNING] PIPE1 Pitch mismatch!\r\n");
+    PRINT("[CAMERA WARNING] PIPE1 Pitch mismatch!\r\n");
   }
 }
 
@@ -93,7 +94,7 @@ static void DCMIPP_PipeInitNn(uint32_t *pitch)
   dcmipp_conf.enable_gamma_conversion = GAMMA_CONVERSION;
   ret = CMW_CAMERA_SetPipeConfig(DCMIPP_PIPE2, &dcmipp_conf, pitch);
   if (ret != HAL_OK) {
-    tm_printf("[CAMERA ERROR] SetPipeConfig PIPE2 failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] SetPipeConfig PIPE2 failed: %d\r\n", ret);
   }
 }
 
@@ -117,7 +118,7 @@ void CameraPipeline_Init(uint32_t *lcd_bg_width, uint32_t *lcd_bg_height, uint32
 
   ret = CMW_CAMERA_Init(&cam_conf);
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_Init failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_Init failed: %d\r\n", ret);
   }
   
   DCMIPP_PipeInitDisplay(&cam_conf, lcd_bg_width, lcd_bg_height);
@@ -129,7 +130,7 @@ void CameraPipeline_DeInit(void)
   int ret;
   ret = CMW_CAMERA_DeInit();
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_DeInit failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_DeInit failed: %d\r\n", ret);
   }
 }
 
@@ -138,7 +139,7 @@ void CameraPipeline_DisplayPipe_Start(uint8_t *display_pipe_dst, uint32_t cam_mo
   int ret;
   ret = CMW_CAMERA_Start(DCMIPP_PIPE1, display_pipe_dst, cam_mode);
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_Start PIPE1 failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_Start PIPE1 failed: %d\r\n", ret);
   }
 }
 
@@ -148,7 +149,7 @@ void CameraPipeline_NNPipe_Start(uint8_t *nn_pipe_dst, uint32_t cam_mode)
 
   ret = CMW_CAMERA_Start(DCMIPP_PIPE2, nn_pipe_dst, cam_mode);
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_Start PIPE2 failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_Start PIPE2 failed: %d\r\n", ret);
   }
 }
 
@@ -157,7 +158,7 @@ void CameraPipeline_DisplayPipe_Stop()
   int ret;
   ret = CMW_CAMERA_Suspend(DCMIPP_PIPE1);
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_Suspend PIPE1 failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_Suspend PIPE1 failed: %d\r\n", ret);
   }
 }
 
@@ -166,7 +167,7 @@ void CameraPipeline_IspUpdate(void)
   int ret = CMW_ERROR_NONE;
   ret = CMW_CAMERA_Run();
   if (ret != CMW_ERROR_NONE) {
-    tm_printf("[CAMERA ERROR] CMW_CAMERA_Run failed: %d\r\n", ret);
+    PRINT("[CAMERA ERROR] CMW_CAMERA_Run failed: %d\r\n", ret);
   }
 }
 
